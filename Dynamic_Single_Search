@@ -1,0 +1,96 @@
+---- This query is used to do single search in a table
+--- Table: Name of the table that will be searched
+----Type: taype will be 4 type 1. Firts record 2. Next Record 3. Previous Record 4. Last Record
+--- Sid: Primary key of the table
+--- KeyCol: Search parameter column it may Sid or any other unique key column
+--- RefCol: Here refCol is used for address ref on Other table. In this query JournalMaster is common table where all 
+----transaction have a ref,so here we used JournalMaster as hard coded. You can use dynamic apprach here. if transaction have 
+--- I have used this in my software app where 4 button used for show document 1.First; 2.Next; 3.Prev; 4.Last;
+ALTER PROC [dbo].[sp_System_Single_Search]
+(
+@Sid VARCHAR(20),@Type VARCHAR(10),@Table VARCHAR(50),@KeyCol VARCHAR(50),@RefCol VARCHAR(50)
+)
+AS
+BEGIN
+--SET @Table='PFLoanSanc'
+--SET @KeyCol='Sid'
+--SET @RefCol='DocNum'
+--SET @Sid='109918'
+--SET @Type='last'
+
+DECLARE @ColName VARCHAR(50),@Cols VARCHAR(MAX)
+
+DECLARE TabCol_Cur CURSOR
+FOR SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = @Table
+OPEN TabCol_Cur
+FETCH NEXT FROM TabCol_Cur INTO @ColName
+WHILE @@FETCH_STATUS=0
+BEGIN
+	SET @Cols=ISNULL(@Cols,'')+'CTE.['+@ColName+'],'
+	FETCH NEXT FROM TabCol_Cur INTO @ColName
+END
+CLOSE TabCol_Cur
+DEALLOCATE TabCol_Cur
+
+
+DECLARE @SQL VARCHAR(8000),@SQL1 VARCHAR(MAX),@SQL2 VARCHAR(MAX)
+
+SET @SQL='
+DECLARE @Sid VARCHAR(20)
+DECLARE @Increment INT
+IF '''+@Type+'''=''next''
+BEGIN
+	SET @Sid='''+@Sid+'''
+	SET @Increment =CAST(-1 AS INT);
+END
+ELSE IF '''+@Type+'''=''previous''
+BEGIN
+	SET @Sid='''+@Sid+'''
+	SET @Increment =1
+END
+ELSE IF '''+@Type+'''=''last''
+BEGIN
+	SELECT TOP 1 @Sid='+@KeyCol+' FROM '+@Table+' ORDER BY '+@KeyCol+' DESC	
+	SET @Increment =0
+END
+ELSE IF '''+@Type+'''=''first''
+BEGIN
+	SELECT TOP 1 @Sid='+@KeyCol+' FROM '+@Table+' ORDER BY '+@KeyCol+' ASC	
+	SET @Increment =0
+END
+'
+
+IF ''+@RefCol+'' = ''
+BEGIN
+SET @SQL1='
+	;WITH CTE AS (
+	SELECT
+	rownum = ROW_NUMBER() OVER (ORDER BY p.'+@KeyCol+'),*
+	FROM '+@Table+' p
+	)
+	SELECT TOP 1 '+LEFT(@Cols,LEN(@Cols)-1)+'
+	FROM CTE
+	LEFT JOIN CTE prev ON prev.rownum = CTE.rownum + @Increment
+	LEFT JOIN CTE nex ON nex.rownum = CTE.rownum + @Increment
+	WHERE nex.'+@KeyCol+'=@Sid OR  prev.'+@KeyCol+'=@Sid
+	'
+END
+ELSE
+BEGIN
+ SET @SQL1='
+	;WITH CTE AS (
+	SELECT
+	rownum = ROW_NUMBER() OVER (ORDER BY p.'+@KeyCol+'),*
+	FROM '+@Table+' p
+	)
+	SELECT TOP 1 '+LEFT(@Cols,LEN(@Cols)-1)+',CAST((SELECT TransId FROM JournalMaster WHERE BaseRef=CTE.'+@RefCol+') AS VARCHAR)TransId
+	FROM CTE
+	LEFT JOIN CTE prev ON prev.rownum = CTE.rownum + @Increment
+	LEFT JOIN CTE nex ON nex.rownum = CTE.rownum + @Increment
+	WHERE nex.'+@KeyCol+'=@Sid OR  prev.'+@KeyCol+'=@Sid
+	'
+END
+
+EXEC (@SQL+@SQL1)
+
+END
