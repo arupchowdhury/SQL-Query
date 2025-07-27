@@ -1,0 +1,45 @@
+
+----- This query is used for pagination. Table: Database table name that will be paginated, 
+----KeyCol: Unique or Primary key column, Pages: Page no, Rows: Number of rows in each page.
+ALTER PROC [dbo].[sp_System_Pagination]
+@Table VARCHAR(30),
+@KeyCol VARCHAR(50),
+@Pages INT,
+@Rows INT
+AS
+BEGIN
+
+DECLARE @ColName VARCHAR(50),@Cols VARCHAR(MAX),@SQL1 VARCHAR(MAX)
+
+DECLARE TabCol_Cur CURSOR
+FOR SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = @Table
+OPEN TabCol_Cur
+FETCH NEXT FROM TabCol_Cur INTO @ColName
+WHILE @@FETCH_STATUS=0
+BEGIN
+	SET @Cols=ISNULL(@Cols,'')+'CTE.['+@ColName+'],'
+	FETCH NEXT FROM TabCol_Cur INTO @ColName
+END
+CLOSE TabCol_Cur
+DEALLOCATE TabCol_Cur
+
+ SET @SQL1='
+	;WITH CTE AS (
+	SELECT
+	rownum = ROW_NUMBER() OVER (ORDER BY p.'+@KeyCol+'),*
+	FROM '+@Table+' p
+	)
+	SELECT '+LEFT(@Cols,LEN(@Cols)-1)+'
+	INTO #TabPages FROM CTE
+	LEFT JOIN CTE prev ON prev.rownum = CTE.rownum
+	LEFT JOIN CTE nex ON nex.rownum = CTE.rownum
+	ORDER BY CTE.rownum DESC	
+
+	SELECT TOP '+CAST(@Pages*@Rows AS VARCHAR)+' * FROM #TabPages
+	EXCEPT
+	SELECT TOP '+CAST((@Pages*@Rows)-@Rows AS VARCHAR)+' * FROM #TabPages
+
+	'
+
+EXEC(@SQL1)
+END
