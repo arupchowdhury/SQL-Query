@@ -1,0 +1,263 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Report MustUnderstand="df" xmlns="http://schemas.microsoft.com/sqlserver/reporting/2016/01/reportdefinition" xmlns:rd="http://schemas.microsoft.com/SQLServer/reporting/reportdesigner" xmlns:df="http://schemas.microsoft.com/sqlserver/reporting/2016/01/reportdefinition/defaultfontfamily">
+  <df:DefaultFontFamily>Segoe UI</df:DefaultFontFamily>
+  <AutoRefresh>0</AutoRefresh>
+  <DataSources>
+    <DataSource Name="DataSource1">
+      <DataSourceReference>/1. SAP (The Bengal Glass Works Ltd.)/The Bengal Glass  Works Ltd</DataSourceReference>
+      <rd:SecurityType>None</rd:SecurityType>
+      <rd:DataSourceID>87157379-da22-4c5a-a7cd-ceda3433ca5b</rd:DataSourceID>
+    </DataSource>
+  </DataSources>
+  <DataSets>
+    <DataSet Name="DataSet1">
+      <Query>
+        <DataSourceName>DataSource1</DataSourceName>
+        <QueryParameters>
+          <QueryParameter Name="@fy">
+            <Value>=Parameters!fy.Value</Value>
+          </QueryParameter>
+          <QueryParameter Name="@Group">
+            <Value>=Parameters!Group.Value</Value>
+          </QueryParameter>
+        </QueryParameters>
+        <CommandText>DECLARE @id INT
+SELECT @id=AbsEntry FROM OFPR WHERE Code=@fy
+
+DECLARE @FromDate_1 DATETIME,@FromDate_2 DATETIME,@ToDate_1 DATETIME,@ToDate_2 DATETIME
+DECLARE @Fy1 VARCHAR(10),@Fy2 VARCHAR(10)
+
+SELECT @FromDate_1=F_RefDate,@ToDate_1=T_RefDate,@Fy1=Name FROM OFPR WHERE AbsEntry=@id
+SELECT @FromDate_2=F_RefDate,@ToDate_2=T_RefDate,@Fy2=Name FROM OFPR WHERE AbsEntry=@id-1
+
+SELECT T0.ItmsGrpCod,T0.ItmsGrpNam,T0.ItemCode,T0.ItemName,SUM(T0.Fy1Qty)Fy1Qty,SUM(T0.Fy2Qty)Fy2Qty,SUM(T0.Fy1Value)Fy1Value,SUM(T0.Fy2Value)Fy2Value,T0.FY1,T0.FY2,T0.[C. Year],T0.[Month No.],T0.[Month Name] FROM
+(
+SELECT T1.ItmsGrpCod,T2.ItmsGrpNam,T0.ItemCode,T1.ItemName,T0.Quantity [Fy1Qty],T0.LineTotal [Fy1Value],
+(SELECT Name FROM OFPR WHERE AbsEntry=@id)[FY1],0 [Fy2Qty],0 [Fy2Value],(SELECT Name FROM OFPR WHERE AbsEntry=@id-1)[Fy2],YEAR(T0.DocDate)[C. Year],MONTH(T0.DocDate)[Month No.],DATENAME(MM,T0.DocDate)[Month Name] FROM INV1 T0, OITM T1,OITB T2
+WHERE T0.ItemCode=T1.ItemCode AND T1.ItmsGrpCod=T2.ItmsGrpCod AND T0.DocDate BETWEEN @FromDate_1 AND @ToDate_1 AND T2.ItmsGrpNam=@Group
+UNION ALL
+SELECT T1.ItmsGrpCod,T2.ItmsGrpNam,T0.ItemCode,T1.ItemName,0 Quantity,0 LineTotal,
+(SELECT Name FROM OFPR WHERE AbsEntry=@id)[FY],T0.Quantity [Fy2Qty],T0.LineTotal [Fy2Value],(SELECT Name FROM OFPR WHERE AbsEntry=@id-1)[Fy2],YEAR(T0.DocDate)[C. Year],MONTH(T0.DocDate)[Month No.],DATENAME(MM,T0.DocDate)[Month Name] FROM INV1 T0, OITM T1,OITB T2
+WHERE T0.ItemCode=T1.ItemCode AND T1.ItmsGrpCod=T2.ItmsGrpCod AND T0.DocDate BETWEEN @FromDate_2 AND @ToDate_2 AND T2.ItmsGrpNam=@Group
+)T0
+GROUP BY T0.ItmsGrpCod,T0.ItmsGrpNam,T0.ItemCode,T0.ItemName,T0.FY1,T0.FY2,T0.[C. Year],T0.[Month No.],T0.[Month Name]
+ORDER BY T0.ItmsGrpCod,T0.ItemCode,T0.[C. Year],T0.[Month No.]</CommandText>
+      </Query>
+      <Fields>
+        <Field Name="ItmsGrpCod">
+          <DataField>ItmsGrpCod</DataField>
+          <rd:TypeName>System.Int16</rd:TypeName>
+        </Field>
+        <Field Name="ItmsGrpNam">
+          <DataField>ItmsGrpNam</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="ItemCode">
+          <DataField>ItemCode</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="ItemName">
+          <DataField>ItemName</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="Fy1Qty">
+          <DataField>Fy1Qty</DataField>
+          <rd:TypeName>System.Decimal</rd:TypeName>
+        </Field>
+        <Field Name="Fy2Qty">
+          <DataField>Fy2Qty</DataField>
+          <rd:TypeName>System.Decimal</rd:TypeName>
+        </Field>
+        <Field Name="Fy1Value">
+          <DataField>Fy1Value</DataField>
+          <rd:TypeName>System.Decimal</rd:TypeName>
+        </Field>
+        <Field Name="Fy2Value">
+          <DataField>Fy2Value</DataField>
+          <rd:TypeName>System.Decimal</rd:TypeName>
+        </Field>
+        <Field Name="FY1">
+          <DataField>FY1</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="FY2">
+          <DataField>FY2</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="C__Year">
+          <DataField>C. Year</DataField>
+          <rd:TypeName>System.Int32</rd:TypeName>
+        </Field>
+        <Field Name="Month_No_">
+          <DataField>Month No.</DataField>
+          <rd:TypeName>System.Int32</rd:TypeName>
+        </Field>
+        <Field Name="Month_Name">
+          <DataField>Month Name</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+      </Fields>
+    </DataSet>
+    <DataSet Name="DataSet2">
+      <Query>
+        <DataSourceName>DataSource1</DataSourceName>
+        <QueryParameters>
+          <QueryParameter Name="@Group">
+            <Value>=Parameters!Group.Value</Value>
+          </QueryParameter>
+        </QueryParameters>
+        <CommandText>SELECT ItemCode,ItemName FROM OITM WHERE ItmsGrpCod=(SELECT ItmsGrpCod FROM OITB WHERE ItmsGrpNam=@Group)</CommandText>
+      </Query>
+      <Fields>
+        <Field Name="ItemCode">
+          <DataField>ItemCode</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+        <Field Name="ItemName">
+          <DataField>ItemName</DataField>
+          <rd:TypeName>System.String</rd:TypeName>
+        </Field>
+      </Fields>
+    </DataSet>
+  </DataSets>
+  <ReportSections>
+    <ReportSection>
+      <Body>
+        <ReportItems>
+          <Tablix Name="Tablix2">
+            <TablixBody>
+              <TablixColumns>
+                <TablixColumn>
+                  <Width>6.44667in</Width>
+                </TablixColumn>
+              </TablixColumns>
+              <TablixRows>
+                <TablixRow>
+                  <Height>2.70833in</Height>
+                  <TablixCells>
+                    <TablixCell>
+                      <CellContents>
+                        <Rectangle Name="Rectangle2">
+                          <ReportItems>
+                            <Subreport Name="Subreport3">
+                              <ReportName>/1. SAP (The Bengal Glass Works Ltd.)/3. Sales - AR/Sub_Report/Sub_sub_ItemWiseSalesComparisonTwoFY</ReportName>
+                              <Parameters>
+                                <Parameter Name="fy">
+                                  <Value>=Parameters!fy.Value</Value>
+                                </Parameter>
+                                <Parameter Name="Group">
+                                  <Value>=Parameters!Group.Value</Value>
+                                </Parameter>
+                                <Parameter Name="ItemCode">
+                                  <Value>=Fields!ItemCode.Value</Value>
+                                </Parameter>
+                              </Parameters>
+                              <Top>0.14583in</Top>
+                              <Left>0.12375in</Left>
+                              <Height>2.46875in</Height>
+                              <Width>6.15625in</Width>
+                              <Style>
+                                <Border>
+                                  <Style>None</Style>
+                                </Border>
+                              </Style>
+                            </Subreport>
+                          </ReportItems>
+                          <KeepTogether>true</KeepTogether>
+                          <Style>
+                            <Border>
+                              <Style>None</Style>
+                            </Border>
+                          </Style>
+                        </Rectangle>
+                      </CellContents>
+                    </TablixCell>
+                  </TablixCells>
+                </TablixRow>
+              </TablixRows>
+            </TablixBody>
+            <TablixColumnHierarchy>
+              <TablixMembers>
+                <TablixMember />
+              </TablixMembers>
+            </TablixColumnHierarchy>
+            <TablixRowHierarchy>
+              <TablixMembers>
+                <TablixMember>
+                  <Group Name="Details" />
+                </TablixMember>
+              </TablixMembers>
+            </TablixRowHierarchy>
+            <DataSetName>DataSet2</DataSetName>
+            <Top>0.06944in</Top>
+            <Left>0.09375in</Left>
+            <Height>2.70833in</Height>
+            <Width>6.44667in</Width>
+            <Style>
+              <Border>
+                <Style>None</Style>
+              </Border>
+            </Style>
+          </Tablix>
+        </ReportItems>
+        <Height>2.91542in</Height>
+        <Style>
+          <Border>
+            <Style>None</Style>
+          </Border>
+        </Style>
+      </Body>
+      <Width>6.54042in</Width>
+      <Page>
+        <PageHeader>
+          <Height>0.30208in</Height>
+          <PrintOnFirstPage>true</PrintOnFirstPage>
+          <PrintOnLastPage>true</PrintOnLastPage>
+          <Style>
+            <Border>
+              <Style>None</Style>
+            </Border>
+          </Style>
+        </PageHeader>
+        <PageHeight>200in</PageHeight>
+        <PageWidth>14in</PageWidth>
+        <LeftMargin>0.5in</LeftMargin>
+        <RightMargin>0.25in</RightMargin>
+        <TopMargin>0.5in</TopMargin>
+        <BottomMargin>0.25in</BottomMargin>
+        <Style />
+      </Page>
+    </ReportSection>
+  </ReportSections>
+  <ReportParameters>
+    <ReportParameter Name="fy">
+      <DataType>String</DataType>
+      <Prompt>fy</Prompt>
+    </ReportParameter>
+    <ReportParameter Name="Group">
+      <DataType>String</DataType>
+      <Prompt>Group</Prompt>
+    </ReportParameter>
+  </ReportParameters>
+  <ReportParametersLayout>
+    <GridLayoutDefinition>
+      <NumberOfColumns>4</NumberOfColumns>
+      <NumberOfRows>2</NumberOfRows>
+      <CellDefinitions>
+        <CellDefinition>
+          <ColumnIndex>0</ColumnIndex>
+          <RowIndex>0</RowIndex>
+          <ParameterName>fy</ParameterName>
+        </CellDefinition>
+        <CellDefinition>
+          <ColumnIndex>1</ColumnIndex>
+          <RowIndex>0</RowIndex>
+          <ParameterName>Group</ParameterName>
+        </CellDefinition>
+      </CellDefinitions>
+    </GridLayoutDefinition>
+  </ReportParametersLayout>
+  <rd:ReportUnitType>Inch</rd:ReportUnitType>
+  <rd:ReportServerUrl>http://reports:8585/ReportServer</rd:ReportServerUrl>
+  <rd:ReportID>89519571-9ea1-4a6d-9780-872c962bbd23</rd:ReportID>
+</Report>
